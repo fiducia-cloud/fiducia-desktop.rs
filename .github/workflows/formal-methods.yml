@@ -1,0 +1,187 @@
+name: Formal application lifecycle
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '29 7 * * 2'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  QUINT_PACKAGE: '@informalsystems/quint@0.32.0'
+
+jobs:
+  lifecycle-model:
+    name: Quint model and Rust refinement
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+
+      - name: Typecheck model and deterministic traces
+        run: |
+          mkdir -p .formal-artifacts
+          npx --yes --package="$QUINT_PACKAGE" quint typecheck formal/app_lifecycle.qnt
+          npx --yes --package="$QUINT_PACKAGE" quint typecheck formal/app_lifecycle_test.qnt
+
+      - name: Run deterministic security traces
+        run: |
+          set -o pipefail
+          npx --yes --package="$QUINT_PACKAGE" quint test \
+            formal/app_lifecycle_test.qnt \
+            --main=app_lifecycle_test \
+            --match='.*Test$' \
+            --out-itf='.formal-artifacts/{test}-{seq}.itf.json' \
+            2>&1 | tee .formal-artifacts/quint-test.log
+
+      - name: Simulate invariant and require every phase witness
+        run: |
+          set -o pipefail
+          npx --yes --package="$QUINT_PACKAGE" quint run \
+            formal/app_lifecycle.qnt \
+            --main=app_lifecycle \
+            --max-samples=10000 \
+            --max-steps=30 \
+            --seed=0x6f55ff122b0c948d \
+            --invariant=app_lifecycle_safety \
+            --witnesses \
+              cold_reached \
+              bootstrapping_reached \
+              signed_out_reached \
+              authenticating_reached \
+              selecting_tenant_reached \
+              synchronizing_reached \
+              ready_online_reached \
+              ready_offline_reached \
+              confirming_action_reached \
+              executing_action_reached \
+              reconciliation_required_reached \
+              reconciling_action_reached \
+              recovering_reached \
+              signing_out_reached \
+              failed_reached \
+            2>&1 | tee .formal-artifacts/quint-run.log
+          if grep -Eq 'was witnessed in 0 trace' .formal-artifacts/quint-run.log; then
+            echo 'At least one declared lifecycle phase was unreachable.' >&2
+            exit 1
+          fi
+
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup toolchain install 1.96.0 --profile minimal --component clippy,rustfmt
+          rustup override set 1.96.0
+
+      - name: Check Rust transition system
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test --all-targets
+
+      - name: Record verification inputs
+        if: always()
+        run: |
+          {
+            printf 'commit=%s\n' "$GITHUB_SHA"
+            printf 'event=%s\n' "$GITHUB_EVENT_NAME"
+            printf 'quint_package=%s\n' "$QUINT_PACKAGE"
+            node --version
+            rustc --version
+            cargo --version
+            sha256sum formal/fm.toml formal/app_lifecycle.qnt formal/app_lifecycle_test.qnt
+          } > .formal-artifacts/provenance.txt
+
+      - name: Upload traces and provenance
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fiducia-desktop-lifecycle-evidence
+          path: .formal-artifacts
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+
+  native-shell:
+    name: Native GPUI macOS shell
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup toolchain install 1.96.0 --profile minimal
+          rustup override set 1.96.0
+
+      - name: Ensure Metal compiler is available
+        run: |
+          if ! xcrun --find metal >/dev/null 2>&1; then
+            xcodebuild -downloadComponent MetalToolchain
+          fi
+          xcrun --find metal
+
+      - name: Compile native GPUI application
+        run: cargo check --locked --features desktop-ui --bin fiducia-desktop
+
+  bounded-verification:
+    name: Apalache bounded verification
+    if: github.event_name != 'pull_request'
+    needs: lifecycle-model
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+
+      - name: Install Java
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Verify lifecycle invariant to the declared bound
+        run: |
+          mkdir -p .formal-artifacts
+          set -o pipefail
+          npx --yes --package="$QUINT_PACKAGE" quint verify \
+            formal/app_lifecycle.qnt \
+            --main=app_lifecycle \
+            --max-steps=8 \
+            --invariant=app_lifecycle_safety \
+            --out-itf='.formal-artifacts/counterexample-{seq}.itf.json' \
+            2>&1 | tee .formal-artifacts/quint-verify.log
+
+      - name: Upload verification log or counterexample
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fiducia-desktop-apalache-evidence
+          path: .formal-artifacts
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14

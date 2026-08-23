@@ -1,0 +1,68 @@
+schema_version = 1
+project = "fiducia-desktop.rs"
+model = "app-lifecycle-v1"
+language = "quint"
+spec = "formal/app_lifecycle.qnt"
+main = "app_lifecycle"
+init = "init"
+step = "step"
+invariants = ["app_lifecycle_safety"]
+witnesses = [
+  "cold_reached",
+  "bootstrapping_reached",
+  "signed_out_reached",
+  "authenticating_reached",
+  "selecting_tenant_reached",
+  "synchronizing_reached",
+  "ready_online_reached",
+  "ready_offline_reached",
+  "confirming_action_reached",
+  "executing_action_reached",
+  "reconciliation_required_reached",
+  "reconciling_action_reached",
+  "recovering_reached",
+  "signing_out_reached",
+  "failed_reached",
+]
+
+[toolchain]
+quint = "0.32.0"
+node = "22"
+java = "21"
+rust = "1.96.0"
+npx = "npx"
+
+[execution]
+timeout_seconds = 1200
+max_output_bytes = 8388608
+artifacts_dir = ".formal-artifacts"
+
+[simulation]
+backend = "typescript"
+max_samples = 10000
+max_steps = 30
+
+[verification]
+backend = "apalache"
+max_steps = 8
+
+[traces]
+format = "itf"
+model_based_testing_metadata = true
+backend = "typescript"
+count = 8
+max_steps = 30
+max_samples = 10000
+seed = "0x6f55ff122b0c948d"
+
+[adapters.rust]
+strategy = "bounded-independent-reference"
+target = "src/app_lifecycle.rs"
+status = "active"
+issue = "DEN-3971"
+
+[adapters.dart]
+strategy = "shared-model-copy-with-bounded-independent-reference"
+target = "../fiducia-flutter/lib/src/app/app_lifecycle_machine.dart"
+status = "active"
+issue = "DEN-3971"
