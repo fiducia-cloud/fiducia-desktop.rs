@@ -1,4 +1,8 @@
 /target/
+/.vendor/.zed/
+/.zed/
+/.zed-pack/
+/zed_modules/
 .DS_Store
 .formal-artifacts/
 _apalache-out/

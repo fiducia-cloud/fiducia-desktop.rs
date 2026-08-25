@@ -26,11 +26,15 @@ Delivery is tracked by DEN-3971.
 ## Develop
 
 ```sh
-cargo fmt --all -- --check
-cargo clippy --all-targets -- -D warnings
-cargo test --all-targets
-cargo check --features desktop-ui --bin fiducia-desktop
+zed install --frozen
+zed validate --require-lock
+zed run cargo fmt --all -- --check
+zed run cargo clippy --locked --all-targets -- -D warnings
+zed run cargo test --locked --all-targets
+zed run cargo check --locked --features desktop-ui --bin fiducia-desktop
 ```
 
 The last command requires Xcode's Metal toolchain on macOS because GPUI
 compiles native shaders. The crate is private and is not published to crates.io.
+The Zed package has no cross-repository dependency yet; its committed lock is
+therefore intentionally empty and makes that boundary explicit and frozen.

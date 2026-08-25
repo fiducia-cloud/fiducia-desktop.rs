@@ -1,0 +1,24 @@
+[package]
+org = "fiducia-cloud"
+name = "fiducia-desktop"
+version = "0.1.0"
+description = "Formally specified native Fiducia operator desktop shell"
+license = "AGPL-3.0-or-later"
+keywords = ["desktop", "gpui", "formal-methods", "state-machine", "fiducia"]
+language = "rust"
+
+[package.repository]
+vcs = "git"
+url = "https://github.com/fiducia-cloud/fiducia-desktop.rs"
+
+[install]
+adapter = "none"
+dir = ".vendor/.zed"
+
+[publish]
+include_readme = true
+tag_format = "v{version}"
+exclude = [".env", ".env.*", ".formal-artifacts/**", ".vendor/.zed/**", ".zed/**", ".zed-pack/**", "target/**", "tmp/**", "**/*.log", ".DS_Store"]
+
+[scripts]
+test = "cargo test --locked --all-targets"
