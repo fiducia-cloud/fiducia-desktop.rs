@@ -29,6 +29,24 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install released Zed package manager
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 \
+            --output "$RUNNER_TEMP/zed.tar.gz" \
+            https://github.com/zed-pkg/zed-cli/releases/download/v0.2.3/zed-x86_64-unknown-linux-gnu.tar.gz
+          printf '%s  %s\n' \
+            b8f81a8e4943cbaeb47153386819a911dcf02666a8709c5bd013e4f35b1ba1b9 \
+            "$RUNNER_TEMP/zed.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/zed.tar.gz" -C "$RUNNER_TEMP"
+          printf '%s\n' "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Validate frozen Zed package contract
+        run: |
+          zed validate --require-lock
+          zed install --frozen
+
       - name: Install Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
