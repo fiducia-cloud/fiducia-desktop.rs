@@ -19,9 +19,12 @@ the shipped desktop binary remains a native GPUI application.
 - Ambiguous write outcomes block new writes until reconciliation finishes.
 - Sign-out revokes local authority before cleanup begins.
 - Invalid snapshots fail closed with no session, tenant, or pending action.
+- HTTPS deep links pass through a separate generation-fenced admission machine
+  and can only request the existing lifecycle confirmation transition.
 
-See `docs/FORMAL_METHODS.md`, `docs/DESKTOP_TOOLKIT.md`, and `formal/README.md`.
-Delivery is tracked by DEN-3971.
+See `docs/FORMAL_METHODS.md`, `docs/DEEP_LINKS.md`,
+`docs/DESKTOP_TOOLKIT.md`, and `formal/README.md`. Delivery is tracked by
+DEN-3971.
 
 ## Develop
 

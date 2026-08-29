@@ -55,6 +55,15 @@ max_steps = 30
 max_samples = 10000
 seed = "0x6f55ff122b0c948d"
 
+[models.deep_link_admission]
+spec = "formal/deep_link_admission.qnt"
+test = "formal/deep_link_admission_test.qnt"
+main = "deep_link_admission"
+init = "init"
+step = "step"
+invariant = "deep_link_admission_safety"
+issue = "DEN-3971"
+
 [adapters.rust]
 strategy = "bounded-independent-reference"
 target = "src/app_lifecycle.rs"

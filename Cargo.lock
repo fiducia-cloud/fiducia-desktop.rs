@@ -1615,6 +1615,8 @@ name = "fiducia-desktop"
 version = "0.1.0"
 dependencies = [
  "gpui",
+ "serde_json",
+ "url",
 ]
 
 [[package]]

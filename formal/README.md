@@ -39,6 +39,12 @@ Rust companion. Those independent finite-state explorations check totality,
 determinism, invariant preservation, stale-token behavior, and phase coverage
 against each production implementation.
 
+The independent `deep_link_admission.qnt` model covers untrusted external URL
+capture, generation-fenced resolution, rejection that preserves the last valid
+intent, and controlled consumption. Its accepted intent is only a request to
+the lifecycle machine; it does not bypass lifecycle authority or confirmation.
+See `../docs/DEEP_LINKS.md` and the shared files under `../contracts/`.
+
 ## Claim boundary
 
 Passing these checks proves the stated invariant only for the abstract model

@@ -57,6 +57,11 @@ jobs:
           mkdir -p .formal-artifacts
           npx --yes --package="$QUINT_PACKAGE" quint typecheck formal/app_lifecycle.qnt
           npx --yes --package="$QUINT_PACKAGE" quint typecheck formal/app_lifecycle_test.qnt
+          npx --yes --package="$QUINT_PACKAGE" quint typecheck formal/deep_link_admission.qnt
+          npx --yes --package="$QUINT_PACKAGE" quint typecheck formal/deep_link_admission_test.qnt
+
+      - name: Verify shared deep-link contract provenance
+        run: sha256sum --check contracts/parity.sha256
 
       - name: Run deterministic security traces
         run: |
@@ -67,6 +72,12 @@ jobs:
             --match='.*Test$' \
             --out-itf='.formal-artifacts/{test}-{seq}.itf.json' \
             2>&1 | tee .formal-artifacts/quint-test.log
+          npx --yes --package="$QUINT_PACKAGE" quint test \
+            formal/deep_link_admission_test.qnt \
+            --main=deep_link_admission_test \
+            --match='.*Test$' \
+            --out-itf='.formal-artifacts/deep-link-{test}-{seq}.itf.json' \
+            2>&1 | tee .formal-artifacts/deep-link-quint-test.log
 
       - name: Simulate invariant and require every phase witness
         run: |
@@ -100,6 +111,23 @@ jobs:
             exit 1
           fi
 
+      - name: Simulate deep-link admission invariant and phases
+        run: |
+          set -o pipefail
+          npx --yes --package="$QUINT_PACKAGE" quint run \
+            formal/deep_link_admission.qnt \
+            --main=deep_link_admission \
+            --max-samples=10000 \
+            --max-steps=20 \
+            --seed=0x6f55ff122b0c948d \
+            --invariant=deep_link_admission_safety \
+            --witnesses idle_reached resolving_reached pending_reached \
+            2>&1 | tee .formal-artifacts/deep-link-quint-run.log
+          if grep -Eq 'was witnessed in 0 trace' .formal-artifacts/deep-link-quint-run.log; then
+            echo 'At least one deep-link admission phase was unreachable.' >&2
+            exit 1
+          fi
+
       - name: Install pinned Rust toolchain
         run: |
           rustup toolchain install 1.96.0 --profile minimal --component clippy,rustfmt
@@ -108,8 +136,8 @@ jobs:
       - name: Check Rust transition system
         run: |
           cargo fmt --all -- --check
-          cargo clippy --all-targets -- -D warnings
-          cargo test --all-targets
+          cargo clippy --locked --all-targets -- -D warnings
+          cargo test --locked --all-targets
 
       - name: Record verification inputs
         if: always()
@@ -121,7 +149,7 @@ jobs:
             node --version
             rustc --version
             cargo --version
-            sha256sum formal/fm.toml formal/app_lifecycle.qnt formal/app_lifecycle_test.qnt
+            sha256sum formal/fm.toml formal/*.qnt contracts/*
           } > .formal-artifacts/provenance.txt
 
       - name: Upload traces and provenance
@@ -146,7 +174,7 @@ jobs:
 
       - name: Install pinned Rust toolchain
         run: |
-          rustup toolchain install 1.96.0 --profile minimal
+          rustup toolchain install 1.96.0 --profile minimal --component clippy
           rustup override set 1.96.0
 
       - name: Ensure Metal compiler is available
@@ -156,8 +184,10 @@ jobs:
           fi
           xcrun --find metal
 
-      - name: Compile native GPUI application
-        run: cargo check --locked --features desktop-ui --bin fiducia-desktop
+      - name: Lint and compile native GPUI application
+        run: |
+          cargo clippy --locked --features desktop-ui --bin fiducia-desktop -- -D warnings
+          cargo check --locked --features desktop-ui --bin fiducia-desktop
 
   bounded-verification:
     name: Apalache bounded verification
@@ -193,6 +223,13 @@ jobs:
             --invariant=app_lifecycle_safety \
             --out-itf='.formal-artifacts/counterexample-{seq}.itf.json' \
             2>&1 | tee .formal-artifacts/quint-verify.log
+          npx --yes --package="$QUINT_PACKAGE" quint verify \
+            formal/deep_link_admission.qnt \
+            --main=deep_link_admission \
+            --max-steps=8 \
+            --invariant=deep_link_admission_safety \
+            --out-itf='.formal-artifacts/deep-link-counterexample-{seq}.itf.json' \
+            2>&1 | tee .formal-artifacts/deep-link-quint-verify.log
 
       - name: Upload verification log or counterexample
         if: always()

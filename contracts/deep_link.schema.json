@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fiducia.cloud/contracts/deep-link-intent.schema.json",
+  "title": "FiduciaDeepLinkIntent",
+  "description": "A syntactically admitted request that still requires AppLifecycleMachine authorization.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "kind",
+    "action",
+    "canonical_url"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "kind": {
+      "const": "request_action"
+    },
+    "action": {
+      "enum": [
+        "rotate-api-key",
+        "review-reconciliation"
+      ]
+    },
+    "canonical_url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://fiducia\\.cloud/open\\?action=(rotate-api-key|review-reconciliation)$",
+      "maxLength": 96
+    }
+  }
+}

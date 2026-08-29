@@ -45,3 +45,10 @@ Apalache checks the invariant exhaustively to the configured bound, and Dart
 and Rust tests independently explore their finite transition graphs. This is a
 bounded safety claim, not a claim that operating systems, frameworks, services,
 or adapters can never fail.
+
+`deep_link_admission.qnt` separately models hostile link admission as a
+three-phase, generation-fenced machine. Shared contract vectors exercise the
+raw-string classifier in Dart and Rust. A pending intent still has no authority:
+it must hand off through `AppLifecycleMachine`, which enforces online readiness
+and explicit confirmation. See `DEEP_LINKS.md` for the exact grammar, parity
+evidence, and native association boundary.

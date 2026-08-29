@@ -1,0 +1,228 @@
+{
+  "contract_version": 1,
+  "maximum_input_bytes": 2048,
+  "vectors": [
+    {
+      "id": "accept-rotate-api-key",
+      "input": "https://fiducia.cloud/open?action=rotate-api-key",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "accepted",
+        "reason": "accepted",
+        "intent": {
+          "version": 1,
+          "kind": "request_action",
+          "action": "rotate-api-key",
+          "canonical_url": "https://fiducia.cloud/open?action=rotate-api-key"
+        }
+      }
+    },
+    {
+      "id": "accept-review-reconciliation",
+      "input": "https://fiducia.cloud/open?action=review-reconciliation",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "accepted",
+        "reason": "accepted",
+        "intent": {
+          "version": 1,
+          "kind": "request_action",
+          "action": "review-reconciliation",
+          "canonical_url": "https://fiducia.cloud/open?action=review-reconciliation"
+        }
+      }
+    },
+    {
+      "id": "reject-empty",
+      "input": "",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "empty"
+      }
+    },
+    {
+      "id": "reject-too-long",
+      "input": "https://fiducia.cloud/open?action=rotate-api-key&padding=",
+      "append_ascii": "a",
+      "append_count": 2048,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "too_long"
+      }
+    },
+    {
+      "id": "reject-insecure-scheme",
+      "input": "http://fiducia.cloud/open?action=rotate-api-key",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "insecure_scheme"
+      }
+    },
+    {
+      "id": "reject-credentials",
+      "input": "https://user:secret@fiducia.cloud/open?action=rotate-api-key",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "credentials_forbidden"
+      }
+    },
+    {
+      "id": "reject-unexpected-port",
+      "input": "https://fiducia.cloud:443/open?action=rotate-api-key",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "unexpected_port"
+      }
+    },
+    {
+      "id": "reject-other-origin",
+      "input": "https://app.fiducia.cloud/open?action=rotate-api-key",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "unexpected_origin"
+      }
+    },
+    {
+      "id": "reject-noncanonical-origin",
+      "input": "https://FIDUCIA.CLOUD/open?action=rotate-api-key",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "non_canonical"
+      }
+    },
+    {
+      "id": "reject-fragment",
+      "input": "https://fiducia.cloud/open?action=rotate-api-key#confirm",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "fragment_forbidden"
+      }
+    },
+    {
+      "id": "reject-unexpected-path",
+      "input": "https://fiducia.cloud/admin?action=rotate-api-key",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "unexpected_path"
+      }
+    },
+    {
+      "id": "reject-missing-action",
+      "input": "https://fiducia.cloud/open",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "missing_action"
+      }
+    },
+    {
+      "id": "reject-empty-action",
+      "input": "https://fiducia.cloud/open?action=",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "missing_action"
+      }
+    },
+    {
+      "id": "reject-duplicate-action",
+      "input": "https://fiducia.cloud/open?action=rotate-api-key&action=review-reconciliation",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "duplicate_parameter"
+      }
+    },
+    {
+      "id": "reject-unexpected-parameter",
+      "input": "https://fiducia.cloud/open?action=rotate-api-key&confirm=true",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "unexpected_parameter"
+      }
+    },
+    {
+      "id": "reject-unknown-action",
+      "input": "https://fiducia.cloud/open?action=delete-company",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "unknown_action"
+      }
+    },
+    {
+      "id": "reject-percent-encoding",
+      "input": "https://fiducia.cloud/open?action=%72otate-api-key",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "non_canonical"
+      }
+    },
+    {
+      "id": "reject-plus-encoding",
+      "input": "https://fiducia.cloud/open?action=rotate+api+key",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "non_canonical"
+      }
+    },
+    {
+      "id": "reject-trailing-separator",
+      "input": "https://fiducia.cloud/open?action=rotate-api-key&",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "non_canonical"
+      }
+    },
+    {
+      "id": "reject-leading-whitespace",
+      "input": " https://fiducia.cloud/open?action=rotate-api-key",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "malformed"
+      }
+    },
+    {
+      "id": "reject-relative-uri",
+      "input": "/open?action=rotate-api-key",
+      "append_ascii": "",
+      "append_count": 0,
+      "expected": {
+        "disposition": "rejected",
+        "reason": "malformed"
+      }
+    }
+  ]
+}
