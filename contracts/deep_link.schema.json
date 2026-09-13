@@ -16,9 +16,11 @@
       "const": 1
     },
     "kind": {
+      "type": "string",
       "const": "request_action"
     },
     "action": {
+      "type": "string",
       "enum": [
         "rotate-api-key",
         "review-reconciliation"
