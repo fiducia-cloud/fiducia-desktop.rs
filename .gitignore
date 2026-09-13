@@ -20,3 +20,6 @@ temp/
 tmp
 temp
 temp/worktrees
+
+# TJSV comparison evidence (generated Schema B, receipts, Contract IR) is never an authority.
+.typespec-json-schema-validator/
