@@ -189,6 +189,21 @@ jobs:
           cargo clippy --locked --features desktop-ui --bin fiducia-desktop -- -D warnings
           cargo check --locked --features desktop-ui --bin fiducia-desktop
 
+  newer-toolchain:
+    name: Rust 1.100 compatibility (headless)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Install Rust 1.100
+        run: rustup toolchain install 1.100.0 --profile minimal --component clippy
+      - name: Lint and test against current stable Rust
+        run: |
+          cargo +1.100.0 clippy --locked --all-targets -- -D warnings
+          cargo +1.100.0 test --locked --all-targets
+
   bounded-verification:
     name: Apalache bounded verification
     if: github.event_name != 'pull_request'
