@@ -1377,6 +1377,68 @@ mod tests {
     }
 
     #[test]
+    fn repeated_reconnects_ignore_superseded_sync_completions() {
+        let mut machine = boot_ready();
+        let epoch = machine.snapshot().authority_epoch();
+        let first = machine
+            .dispatch(&AppEvent::SyncRequested)
+            .effect
+            .expect("manual sync effect");
+        for _ in 0..3 {
+            let offline = machine.dispatch(&AppEvent::ConnectivityChanged { online: false });
+            assert_eq!(offline.after.phase(), AppPhase::ReadyOffline);
+            assert!(offline.effect.is_none());
+            let duplicate = machine.dispatch(&AppEvent::ConnectivityChanged { online: false });
+            assert_eq!(duplicate.disposition, TransitionDisposition::Rejected);
+            assert_eq!(duplicate.before, duplicate.after);
+            assert!(duplicate.effect.is_none());
+
+            let reconnect = machine.dispatch(&AppEvent::ConnectivityChanged { online: true });
+            let sync = reconnect.effect.expect("reconnect sync effect");
+            assert_eq!(sync.kind, AppEffectKind::Synchronize);
+            assert!(sync.operation_id > first.operation_id);
+            let stale = machine.dispatch(&AppEvent::OperationSucceeded {
+                operation_id: first.operation_id,
+            });
+            assert_eq!(stale.disposition, TransitionDisposition::Stale);
+            assert_eq!(stale.before, stale.after);
+            assert!(stale.effect.is_none());
+            assert_eq!(machine.snapshot().authority_epoch(), epoch);
+
+            machine.dispatch(&AppEvent::OperationSucceeded {
+                operation_id: sync.operation_id,
+            });
+            assert_eq!(machine.snapshot().phase(), AppPhase::ReadyOnline);
+            let duplicate = machine.dispatch(&AppEvent::OperationSucceeded {
+                operation_id: sync.operation_id,
+            });
+            assert_eq!(duplicate.disposition, TransitionDisposition::Stale);
+            assert_eq!(duplicate.before, duplicate.after);
+            assert!(duplicate.effect.is_none());
+            assert_eq!(machine.snapshot().validate(), Ok(()));
+        }
+    }
+
+    #[test]
+    fn cancelling_confirmation_returns_to_ready_without_effect() {
+        let mut machine = boot_ready();
+        let ready = machine.snapshot().clone();
+        let request = machine.dispatch(&AppEvent::ActionRequested {
+            action_id: "refresh-view".to_owned(),
+        });
+        assert_eq!(request.after.phase(), AppPhase::ConfirmingAction);
+        assert!(request.effect.is_none());
+        let cancelled = machine.dispatch(&AppEvent::ActionCancelled);
+        assert_eq!(cancelled.disposition, TransitionDisposition::Applied);
+        assert_eq!(cancelled.after, ready);
+        assert!(cancelled.effect.is_none());
+        let duplicate = machine.dispatch(&AppEvent::ActionCancelled);
+        assert_eq!(duplicate.disposition, TransitionDisposition::Rejected);
+        assert_eq!(duplicate.before, duplicate.after);
+        assert!(duplicate.effect.is_none());
+    }
+
+    #[test]
     fn corrupt_snapshot_fails_closed() {
         let corrupt = AppSnapshot {
             phase: AppPhase::ReadyOnline,
