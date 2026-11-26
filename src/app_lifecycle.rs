@@ -1380,11 +1380,11 @@ mod tests {
     fn repeated_reconnects_ignore_superseded_sync_completions() {
         let mut machine = boot_ready();
         let epoch = machine.snapshot().authority_epoch();
-        let first = machine
-            .dispatch(&AppEvent::SyncRequested)
-            .effect
-            .expect("manual sync effect");
         for _ in 0..3 {
+            let first = machine
+                .dispatch(&AppEvent::SyncRequested)
+                .effect
+                .expect("manual sync effect");
             let offline = machine.dispatch(&AppEvent::ConnectivityChanged { online: false });
             assert_eq!(offline.after.phase(), AppPhase::ReadyOffline);
             assert!(offline.effect.is_none());
